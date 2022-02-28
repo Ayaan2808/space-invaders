@@ -11,7 +11,7 @@ clock = pygame.time.Clock()
 fps = 60
 
 screen_width = 600
-screen_height = 800
+screen_height = 600
 
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Space Invaders')
@@ -111,7 +111,7 @@ class Bullets(pygame.sprite.Sprite):
 		if pygame.sprite.spritecollide(self, alien_group, True):
 			self.kill()
 			explosion_fx.play()
-			explosion = Explosion(self.rect.centerx, self.rect.century, 2)
+			explosion = Explosion(self.rect.centerx, self.rect.centery, 2)
 			explosion_group.add(explosion)
 
 #create Aliens class
@@ -131,7 +131,7 @@ class Aliens(pygame.sprite.Sprite):
 			self.move_direction *= -1
 			self.move_counter *= self.move_direction
 
-class Alien_bullets(pygame.sprit.Sprite):
+class Alien_bullets(pygame.sprite.Sprite):
 	def __init__(self, x, y):
 		pygame.sprite.Sprite.__init__(self)
 		self.image = pygame.image.load("imgs\\alien_bullets.png")
@@ -145,7 +145,7 @@ class Alien_bullets(pygame.sprit.Sprite):
 			self.kill()
 			explosion2_fx.play()
 			spaceship.health_remaining -= 1
-			explosion = Explosion(self.rect.centerx, self.rect.century, 1)
+			explosion = Explosion(self.rect.centerx, self.rect.centery, 1)
 			explosion_group.add(explosion)
 
 #create Explosion class
@@ -183,3 +183,74 @@ class Explosion(pygame.sprite.Sprite):
 		#if the animation is complete, delete explosion
 		if self.index >= len(self.images) - 1 and self.counter >= explosion_speed:
 			self.kill()
+
+spaceship_group = pygame.sprite.Group()
+bullet_group = pygame.sprite.Group()
+alien_group = pygame.sprite.Group()
+alien_bullet_group = pygame.sprite.Group()
+explosion_group = pygame.sprite.Group()
+
+def create_aliens():
+	for row in range(rows):
+		for item in range(cols):
+			alien = Aliens(100 + item * 100, 100 + row * 70)
+			alien_group.add(alien)
+
+create_aliens()
+
+spaceship = Spaceship(int(screen_width / 2), screen_height - 100, 3)
+spaceship_group.add(spaceship)
+
+run = True
+while run:
+	clock.tick(fps)
+
+	draw_bg()
+
+	if countdown == 0:
+		time_now = pygame.time.get_ticks()
+		if time_now - last_alien_shot > alien_cooldown and len(alien_bullet_group) < 5 and len(alien_group) > 0:
+			attacking_alien = random.choice(alien_group.sprites())
+			alien_bullet = Alien_bullets(attacking_alien.rect.centerx, attacking_alien.rect.bottom)
+			alien_bullet_group.add(alien_bullet)
+			last_alien_shot = time_now
+
+		if len(alien_group) == 0:
+			game_over = 1
+
+		if game_over == 0:
+			game_over = spaceship.update()
+
+			bullet_group.update()
+			alien_group.update()
+			alien_bullet_group.update()
+
+		else:
+			if game_over == -1:
+				draw_text('GAME OVER!', font40, white, int(screen_width / 2 - 100), int(screen_height / 2 + 50))
+			if game_over == 1:
+				draw_text('YOU WIN!', font40, white, int(screen_width / 2 -100), int(screen_height / 2 + 100))
+	
+	if countdown > 0:
+		draw_text('GET READY!', font40, white, int(screen_width / 2 -110), int(screen_height / 2 + 50))
+		draw_text(str(countdown), font40, white, int(screen_width / 2 -10), int(screen_height / 2 +100))
+		count_timer = pygame.time.get_ticks()
+		if count_timer - last_count  > 1000:
+			countdown -= 1
+			last_count = count_timer
+
+	explosion_group.update()
+
+	spaceship_group.draw(screen)
+	bullet_group.draw(screen)
+	alien_group.draw(screen )
+	alien_bullet_group.draw(screen)
+	explosion_group.draw(screen)
+
+	for event in pygame.event.get():
+		if event.type == pygame.QUIT:
+			run = False
+
+	pygame.display.update()
+
+pygame.quit()
